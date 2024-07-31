@@ -1,8 +1,8 @@
-from exporter import ui
+from wow_ui import import_ui
 
 
 def main():
-    setup_gui = ui.Application()
+    setup_gui = import_ui.Application()
     setup_gui.root_window.mainloop()
 
 

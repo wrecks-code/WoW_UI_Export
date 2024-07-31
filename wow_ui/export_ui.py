@@ -1,7 +1,13 @@
 import sys
 import tkinter
 import customtkinter
-from customtkinter import CTkFrame, CTkLabel, CTkOptionMenu, CTkButton, CTkCheckBox
+from customtkinter import (
+    CTkFrame,
+    CTkLabel,
+    CTkOptionMenu,
+    CTkButton,
+    CTkCheckBox,
+)
 from wow_ui import paths, strings, filemanager
 
 
@@ -26,13 +32,19 @@ class Application:
         self.selection_frame = CTkFrame(master=self.root_window)
         self.selection_frame.pack(pady=10, padx=10, fill="both", expand=True)
 
+        self.execute_btn_frame = CTkFrame(master=self.root_window)
+        self.execute_btn_frame.pack(pady=10, padx=10, fill="both", expand=True)
+
         # self.root_window.iconbitmap(paths.ASSETS_ICO_PATH)
         self.show_version_selector()
         self.show_account_selector()
         self.show_realm_selector()
         self.show_char_selector()
-        self.show_btn()
         self.show_icons_checkbox()
+        self.show_btn()
+
+        paths.SELECTED_VERSION = paths.get_installed_wow_versions()[0]
+        self.refresh_menus(0)
 
     def exit_application(self):
         self.root_window.destroy()
@@ -50,16 +62,15 @@ class Application:
         label.pack(pady=5, padx=5)
 
         def select_version(selected_option):
-            paths.WOW_SELECTED_VERSION = selected_option
+            paths.SELECTED_VERSION = selected_option
             self.refresh_menus(0)
 
-        global version_menu
-        version_menu = CTkOptionMenu(
+        self.version_menu = CTkOptionMenu(
             self.selection_frame,
             values=paths.get_installed_wow_versions(),
             command=select_version,
         )
-        version_menu.pack(pady=10, padx=10)
+        self.version_menu.pack(pady=10, padx=10)
 
     # ! Account Selector Menu
 
@@ -71,18 +82,17 @@ class Application:
         )
 
         def select_account(selected_option):
-            paths.WOW_SELECTED_ACCOUNT = selected_option
+            paths.SELECTED_ACCOUNT = selected_option
             self.refresh_menus(1)
 
-        global account_menu
-        account_menu = CTkOptionMenu(
+        self.account_menu = CTkOptionMenu(
             self.selection_frame,
             values=paths.get_available_accounts(),
             command=select_account,
         )
 
         label.pack(pady=5, padx=5)
-        account_menu.pack(pady=10, padx=10)
+        self.account_menu.pack(pady=10, padx=10)
 
     def show_realm_selector(self):
         label = CTkLabel(
@@ -92,18 +102,17 @@ class Application:
         )
 
         def select_realm(selected_option):
-            paths.WOW_SELECTED_REALM = selected_option
+            paths.SELECTED_REALM = selected_option
             self.refresh_menus(2)
 
-        global realm_menu
-        realm_menu = CTkOptionMenu(
+        self.realm_menu = CTkOptionMenu(
             self.selection_frame,
             values=paths.get_available_realms(),
             command=select_realm,
         )
 
         label.pack(pady=5, padx=5)
-        realm_menu.pack(pady=10, padx=10)
+        self.realm_menu.pack(pady=10, padx=10)
 
     # ! Char Selector Menu
     def show_char_selector(self):
@@ -114,34 +123,22 @@ class Application:
         )
 
         def select_char(selected_option):
-            paths.WOW_SELECTED_CHARACTER = selected_option
+            paths.SELECTED_CHARACTER = selected_option
 
-        global char_menu
-        char_menu = CTkOptionMenu(
+        self.char_menu = CTkOptionMenu(
             self.selection_frame,
             values=paths.get_available_chars(),
             command=select_char,
         )
 
         label.pack(pady=5, padx=5)
-        char_menu.pack(pady=10, padx=10)
+        self.char_menu.pack(pady=10, padx=10)
 
         # ! Button Functions
 
-    def show_btn(self):
-        def select_acc_btn():
-            filemanager.copy_stuff()
-
-        ok_btn = CTkButton(
-            text=strings.BTN_EXPORT_TXT,
-            master=self.selection_frame,
-            command=select_acc_btn,
-        )
-        ok_btn.pack(pady=10, padx=10)
-
     def show_icons_checkbox(self):
         def checkbox_event():
-            print("toggle")
+            self.include_icons = not self.include_icons
 
         checkbox = CTkCheckBox(
             master=self.selection_frame,
@@ -150,36 +147,45 @@ class Application:
         )
         checkbox.pack(pady=10, padx=10)
 
+    def show_btn(self):
+        def execute_btn():
+            filemanager.export_and_zip(self.include_icons)
+
+        btn = CTkButton(
+            text=strings.BTN_EXPORT_TXT,
+            master=self.execute_btn_frame,
+            command=execute_btn,
+        )
+        btn.pack(pady=10, padx=10)
+
     def refresh_menus(self, level):
-        # available_chars = paths.get_available_chars()
-
         if level == 0:
-            paths.WOW_SELECTED_ACCOUNT = paths.get_available_accounts()[0]
-            account_menu.configure(values=paths.get_available_accounts())
-            account_menu.set(paths.WOW_SELECTED_ACCOUNT)
+            paths.SELECTED_ACCOUNT = paths.get_available_accounts()[0]
+            self.account_menu.configure(values=paths.get_available_accounts())
+            self.account_menu.set(paths.SELECTED_ACCOUNT)
 
-            paths.WOW_SELECTED_REALM = paths.get_available_realms()[0]
-            realm_menu.configure(values=paths.get_available_realms())
-            realm_menu.set(paths.WOW_SELECTED_REALM)
+            paths.SELECTED_REALM = paths.get_available_realms()[0]
+            self.realm_menu.configure(values=paths.get_available_realms())
+            self.realm_menu.set(paths.SELECTED_REALM)
 
-            paths.WOW_SELECTED_CHARACTER = paths.get_available_chars()[0]
-            char_menu.configure(values=paths.get_available_chars())
-            char_menu.set(paths.WOW_SELECTED_CHARACTER)
+            paths.SELECTED_CHARACTER = paths.get_available_chars()[0]
+            self.char_menu.configure(values=paths.get_available_chars())
+            self.char_menu.set(paths.SELECTED_CHARACTER)
         if level == 1:
-            paths.WOW_SELECTED_REALM = paths.get_available_realms()[0]
-            realm_menu.configure(values=paths.get_available_realms())
-            realm_menu.set(paths.WOW_SELECTED_REALM)
+            paths.SELECTED_REALM = paths.get_available_realms()[0]
+            self.realm_menu.configure(values=paths.get_available_realms())
+            self.realm_menu.set(paths.SELECTED_REALM)
 
-            paths.WOW_SELECTED_CHARACTER = paths.get_available_chars()[0]
-            char_menu.configure(values=paths.get_available_chars())
-            char_menu.set(paths.WOW_SELECTED_CHARACTER)
+            paths.SELECTED_CHARACTER = paths.get_available_chars()[0]
+            self.char_menu.configure(values=paths.get_available_chars())
+            self.char_menu.set(paths.SELECTED_CHARACTER)
         if level == 2:
-            paths.WOW_SELECTED_CHARACTER = paths.get_available_chars()[0]
-            char_menu.configure(values=paths.get_available_chars())
-            char_menu.set(paths.WOW_SELECTED_CHARACTER)
+            paths.SELECTED_CHARACTER = paths.get_available_chars()[0]
+            self.char_menu.configure(values=paths.get_available_chars())
+            self.char_menu.set(paths.SELECTED_CHARACTER)
 
         print("refreshing menus...")
-        print(f"selected_version: {paths.WOW_SELECTED_VERSION}")
-        print(f"selected_account: {paths.WOW_SELECTED_ACCOUNT}")
-        print(f"selected_realm: {paths.WOW_SELECTED_REALM}")
-        print(f"selected_character: {paths.WOW_SELECTED_CHARACTER}")
+        print(f"selected_version: {paths.SELECTED_VERSION}")
+        print(f"selected_account: {paths.SELECTED_ACCOUNT}")
+        print(f"selected_realm: {paths.SELECTED_REALM}")
+        print(f"selected_character: {paths.SELECTED_CHARACTER}")
